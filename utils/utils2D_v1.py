@@ -2,7 +2,6 @@ import numpy as np
 import re, os, cv2, shutil
 from collections import Counter
 
-
 class Utils2D:
     """ Utils2D
     
