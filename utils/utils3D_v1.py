@@ -125,8 +125,27 @@ class Utils3D:
         return res_vox
 
     @staticmethod
+    def getThreeViews(vox):
+        # (silce, H, W)
+        # left_view
+        left_view = np.max(vox,2)
+        upper_view = np.max(vox,1)
+        front_view = np.max(vox,0)
+        return left_view, upper_view, front_view
+
+    @staticmethod
+    def getPadFossilFromStone(vox, pad, min_slice, max_slice, min_h, max_h, min_w, max_w):
+        real_min_slice = np.max(0,min_slice-pad)
+        real_min_h = np.max(0,min_h-pad)
+        real_min_w = np.max(0,min_w-pad)
+        real_max_slice = np.min(vox.shape[0]-1,max_slice-pad)
+        real_max_h = np.min(vox.shape[1]-1,max_h-pad)
+        real_max_w = np.min(vox.shape[2]-1,max_w-pad)
+        return vox[real_min_slice:real_max_slice,real_min_h:real_max_h,real_min_w:real_max_w]
+
+    @staticmethod
     def seperateMaskVoxelsGetFeaturesAndNamesAndPts(voxels, originalIndexes, fixed_num=None,
-                                                    needPts=True, hint=True):
+                                                    needPts=True, hint=True, needNamesOrPts = True):
         assert type(voxels) is np.ndarray
         assert len(voxels.shape) == 3
         if hint:
@@ -135,6 +154,7 @@ class Utils3D:
         vx, num = skimage.measure.label(voxels, connectivity=1, return_num=True)
         features = np.zeros((num, 10), dtype=np.float64)
 
+        # Illustration for features
         features[:, 4] = 10000
         features[:, 6] = 10000
         features[:, 8] = 10000
@@ -142,6 +162,17 @@ class Utils3D:
         features[:, 7] = 0
         features[:, 9] = 0
         bar = tqdm(list(range(vx.shape[0])))
+
+        # 0 slice average coordinates
+        # 1 H average coordinates
+        # 2 W average coordinates
+        # 3 voxel sum number
+        # 4 min slice
+        # 5 max slice
+        # 6 min H
+        # 7 max H
+        # 8 min W
+        # 9 max W
 
         for i in bar:
             for j in range(vx.shape[1]):
@@ -172,29 +203,30 @@ class Utils3D:
 
         names = []
         pts = []
-        bar2 = tqdm(list(range(num)))
-        for i in bar2:
-            x_center_index = int(features[i][0] * len(originalIndexes) / vx.shape[0])
-            index = originalIndexes[x_center_index]
-            if fixed_num is not None:
-                center_slice_name = str(index).zfill(fixed_num)
-            else:
-                center_slice_name = str(index)
-            x_min = int(features[i][4])
-            x_max = int(features[i][5])
+        if needNamesOrPts:
+            bar2 = tqdm(list(range(num)))
+            for i in bar2:
+                x_center_index = int(features[i][0] * len(originalIndexes) / vx.shape[0])
+                index = originalIndexes[x_center_index]
+                if fixed_num is not None:
+                    center_slice_name = str(index).zfill(fixed_num)
+                else:
+                    center_slice_name = str(index)
+                x_min = int(features[i][4])
+                x_max = int(features[i][5])
 
-            h_min = int(features[i][6])
-            h_max = int(features[i][7])
+                h_min = int(features[i][6])
+                h_max = int(features[i][7])
 
-            w_min = int(features[i][8])
-            w_max = int(features[i][9])
-            name = 'pt%d_x_center_%s_xMin_%d_xMax_%d_hMin_%d_hMax_%d_wMin_%d_wMax_%d_voxels_shape_%d*%d*%d' % \
-                   (i, center_slice_name, x_min, x_max, h_min, h_max, w_min, w_max, vx.shape[0], vx.shape[1],
-                    vx.shape[2])
-            names.append(name)
-            if needPts:
-                pts.append(Utils3D.voxels2ply(vx, label=i + 1, rgb=False, hint=False)[0])
-            bar2.set_description('Creating point clouds from voxels and names')
+                w_min = int(features[i][8])
+                w_max = int(features[i][9])
+                name = 'pt%d_x_center_%s_xMin_%d_xMax_%d_hMin_%d_hMax_%d_wMin_%d_wMax_%d_voxels_shape_%d*%d*%d' % \
+                       (i, center_slice_name, x_min, x_max, h_min, h_max, w_min, w_max, vx.shape[0], vx.shape[1],
+                        vx.shape[2])
+                names.append(name)
+                if needPts:
+                    pts.append(Utils3D.voxels2ply(vx, label=i + 1, rgb=False, hint=False)[0])
+                bar2.set_description('Creating point clouds from voxels and names')
 
         if hint:
             Format.utilsTail()
