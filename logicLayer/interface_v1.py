@@ -32,13 +32,3 @@ class Interface:
 
         return stone
 
-if __name__ == '__main__':
-
-    # If You Want To Run This Test Please change Line 4 to
-    # from stone_v1 import Stone
-
-    # Test 01-03 Start
-    stone = Interface.getStone('../samples/')
-    Utils2D.showOnePic(stone.morph_stone[0], "Hello")
-    # Test 01-03 End
-

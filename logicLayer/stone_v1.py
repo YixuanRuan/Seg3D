@@ -34,6 +34,7 @@ class Stone:
         max_w = self.labeled_morph_fossil_features[label, 9]
 
         binary_voxel = Utils3D.getPadFossilFromStone(self.morph_stone, 1, min_slice, max_slice, min_h, max_h, min_w, max_w )
+
         gray_voxel = Utils3D.getPadFossilFromStone(self.stone, 100, min_slice, max_slice, min_h, max_h, min_w, max_w )
 
         fossil = Fossil(binary_voxel, gray_voxel, label,
@@ -42,7 +43,7 @@ class Stone:
         return fossil
 
     def labelStone(self):
-        features , vx, names, pts = Utils3D.gseperateMaskVoxelsGetFeaturesAndNamesAndPts(
+        features , vx, names, pts = Utils3D.seperateMaskVoxelsGetFeaturesAndNamesAndPts(
             self.stone, self.slice_list, fixed_num=None,
             needPts=False, hint=True, needNamesOrPts=False
         )
