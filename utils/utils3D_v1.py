@@ -138,21 +138,21 @@ class Utils3D:
         real_min_slice = np.max([0,min_slice-pad]).astype(np.int64)
         real_min_h = np.max([0,min_h-pad]).astype(np.int64)
         real_min_w = np.max([0,min_w-pad]).astype(np.int64)
-        real_max_slice = np.min([vox.shape[0]-1,max_slice-pad]).astype(np.int64)
-        real_max_h = np.min([vox.shape[1]-1,max_h-pad]).astype(np.int64)
-        real_max_w = np.min([vox.shape[2]-1,max_w-pad]).astype(np.int64)
+        real_max_slice = np.min([vox.shape[0]-1,max_slice+pad]).astype(np.int64)
+        real_max_h = np.min([vox.shape[1]-1,max_h+pad]).astype(np.int64)
+        real_max_w = np.min([vox.shape[2]-1,max_w+pad]).astype(np.int64)
 
-        if(real_max_slice <= real_min_slice):
+        if(real_max_slice < real_min_slice):
             real_max_slice = real_min_slice + 1
 
-        if (real_max_h <= real_min_h):
+        if (real_max_h < real_min_h):
             real_max_h = real_min_h + 1
 
-        if(real_max_w <= real_min_w):
+        if(real_max_w < real_min_w):
             real_max_w = real_min_w + 1
 
 
-        return vox[real_min_slice:real_max_slice,real_min_h:real_max_h,real_min_w:real_max_w]
+        return vox[real_min_slice:real_max_slice+1,real_min_h:real_max_h+1,real_min_w:real_max_w+1]
 
     @staticmethod
     def seperateMaskVoxelsGetFeaturesAndNamesAndPts(voxels, originalIndexes, fixed_num=None,

@@ -24,7 +24,7 @@ class Stone:
         return res
 
     def getThreeViewByIndexAndHWPosition(self, slice, h, w):
-        label = self.labeled_morph_stone[slice,h,w]
+        label = self.labeled_morph_stone[slice,h,w] -1
 
         min_slice = self.labeled_morph_fossil_features[label, 4]
         max_slice = self.labeled_morph_fossil_features[label, 5]
@@ -34,7 +34,7 @@ class Stone:
         max_w = self.labeled_morph_fossil_features[label, 9]
 
         binary_voxel = Utils3D.getPadFossilFromStone(self.morph_stone, 1, min_slice, max_slice, min_h, max_h, min_w, max_w )
-
+        print(binary_voxel.shape)
         gray_voxel = Utils3D.getPadFossilFromStone(self.stone, 100, min_slice, max_slice, min_h, max_h, min_w, max_w )
 
         fossil = Fossil(binary_voxel, gray_voxel, label,
@@ -44,7 +44,7 @@ class Stone:
 
     def labelStone(self):
         features , vx, names, pts = Utils3D.seperateMaskVoxelsGetFeaturesAndNamesAndPts(
-            self.stone, self.slice_list, fixed_num=None,
+            self.morph_stone, self.slice_list, fixed_num=None,
             needPts=False, hint=True, needNamesOrPts=False
         )
         self.labeled_morph_fossil_features = features
