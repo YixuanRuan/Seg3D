@@ -5,9 +5,12 @@ import numpy as np
 import cv2
 
 from PySide2.QtWidgets import QApplication, QMainWindow
-from PySide2.QtWidgets import QWidget, QGridLayout, QLabel, QAction, QFileDialog
+from PySide2.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout, QFormLayout, QSplitter, QLabel, QLineEdit, QPushButton, QAction, QFileDialog
 from PySide2 import QtGui
 from PySide2 import QtCore
+
+from logicLayer import LogicLayerInterface
+from utils import Utils2D
 
 
 IMG_EXTENSIONS = ['.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.bmp', '.BMP']
@@ -35,52 +38,13 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.totSlice = 0
         self.curSlice = 0
+        self.fossil = None
 
         self.setWindowTitle("Seg3D")
-        self.resize(1000, 1000) # 设置窗口大小
+        self.resize(1500, 1500)
         self.setUi()
 
     def setUi(self):
-        #Set canvas
-        mainWidget = QWidget()
-        mainLayout = QGridLayout()
-        mainWidget.setLayout(mainLayout)
-
-        self.label1 = QLabel('image')
-        self.label1.setFixedSize(400,20)
-        self.origin_image_label = QLabel()
-        self.origin_image_label.setFixedSize(400,400)
-        self.origin_image_label.setScaledContents(True)
-
-        label2 = QLabel('front view')
-        label2.setFixedSize(400, 20)
-        self.front_view_label = QLabel()
-        self.front_view_label.setFixedSize(400, 400)
-        self.front_view_label.setScaledContents(True)
-
-        label3 = QLabel('left_view')
-        label3.setFixedSize(400, 20)
-        self.left_view_label = QLabel()
-        self.left_view_label.setFixedSize(400, 400)
-        self.left_view_label.setScaledContents(True)
-
-        label4 = QLabel('top_view')
-        label4.setFixedSize(400, 20)
-        self.top_view_label = QLabel()
-        self.top_view_label.setFixedSize(400, 400)
-        self.top_view_label.setScaledContents(True)
-
-        mainLayout.addWidget(self.label1, 1, 1)
-        mainLayout.addWidget(self.origin_image_label, 2, 1)
-        mainLayout.addWidget(label2, 1, 2)
-        mainLayout.addWidget(self.front_view_label, 2, 2)
-        mainLayout.addWidget(label3, 3, 1)
-        mainLayout.addWidget(self.left_view_label, 4, 1)
-        mainLayout.addWidget(label4, 3, 2)
-        mainLayout.addWidget(self.top_view_label, 4, 2)
-
-        self.setCentralWidget(mainWidget)
-
         # Set Menu
         menuBar = self.menuBar()
 
@@ -90,68 +54,155 @@ class MainWindow(QMainWindow):
         quitAction = QAction('&Quit', self, triggered=self.quit, shortcut='Ctrl+Q')
         menuFile.addAction(quitAction)
 
+        # Set layout
+        mainLayout = QHBoxLayout()
+
+        toolLayout = QVBoxLayout()
+        form = QFormLayout()
+        self.lb = QLabel('threshold')
+        self.le = QLineEdit()
+        self.le.setValidator(QtGui.QIntValidator())
+        form.addRow(self.lb, self.le)
+        toolLayout.addLayout(form)
+        self.bnt = QPushButton('re-segment')
+        self.bnt.clicked.connect(self.resegment)
+        toolLayout.addWidget(self.bnt)
+        toolwg = QWidget()
+        toolwg.setLayout(toolLayout)
+
+        canvasLayout = QGridLayout()
+        self.lb1 = QLabel('original image')
+        self.ori_image = QLabel()
+        self.lb2 = QLabel('mask image')
+        self.mask_image = QLabel()
+        self.lb3 = QLabel('front view')
+        self.front_view = QLabel()
+        self.lb4 = QLabel('left_view')
+        self.left_view = QLabel()
+        self.lb5 = QLabel('top_view')
+        self.top_view = QLabel()
+        canvasLayout.addWidget(self.lb1, 1, 1)
+        canvasLayout.addWidget(self.ori_image, 2, 1)
+        canvasLayout.addWidget(self.lb2, 1, 2)
+        canvasLayout.addWidget(self.mask_image, 2, 2)
+        canvasLayout.addWidget(self.lb3, 1, 3)
+        canvasLayout.addWidget(self.front_view, 2, 3)
+        canvasLayout.addWidget(self.lb4, 1, 4)
+        canvasLayout.addWidget(self.left_view, 2, 4)
+        canvasLayout.addWidget(self.lb5, 1, 5)
+        canvasLayout.addWidget(self.top_view, 2, 5)
+        canvaswg = QWidget()
+        canvaswg.setLayout(canvasLayout)
+
+        mainLayout.addWidget(toolwg)
+        mainLayout.addWidget(canvaswg)
+        mainwg = QWidget(self)
+        mainwg.setLayout(mainLayout)
+        self.setCentralWidget(mainwg)
+
     def openImage(self):
-        print('open image')
         filename = QFileDialog.getExistingDirectory(self, 'Open Image', 'C:\\')
+        self.img_list = get_paths_from_images(filename)
 
-        ori_img_list = get_paths_from_images(filename)
-        ori_img = np.zeros(shape=(cv2.imread(ori_img_list[0]).shape[0], cv2.imread(ori_img_list[0]).shape[1],
-                           len(ori_img_list)), dtype='uint8') # Numpy HWN
-
-        for i, img_path in enumerate(ori_img_list):
-            img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-            ori_img[:, :, i] = img
-
-        """
-        分割图像
-        """
-
-        self.seg_img_list = get_paths_from_images(filename[0:-3] + 'seg')
-        # self.seg_img = np.zeros(shape=(ori_img.shape[0], ori_img.shape[1], 3, ori_img.shape[2]),
-        #                    dtype='uint8')  # Numpy HW3*N
-        #
-        # for i, img_path in enumerate(seg_img_list):
-        #     img = cv2.imread(img_path)
-        #     self.seg_img[:, :, :, i] = img
-
-        self.totSlice = len(self.seg_img_list)
+        self.totSlice = len(self.img_list)
         self.curSlice = 0
-        self.origin_image_label.setPixmap(QtGui.QPixmap(self.seg_img_list[self.curSlice]))
-        self.label1.setText('image                      '
-                            + str(self.curSlice + 1) + '  of  ' + str(self.totSlice))
 
+        # segmentation
+        self.stone = LogicLayerInterface.getStone(filename)
+
+        stoneImage = self.stone.stone[self.curSlice]
+        print(stoneImage.shape)
+        if np.max(stoneImage) <= 1:
+            stoneImage = stoneImage * 255
+        stoneImage = stoneImage.astype(np.uint8)
+        img_stone = QtGui.QImage(stoneImage, stoneImage.shape[0],
+                                 stoneImage.shape[1], QtGui.QImage.Format_Grayscale8)
+        self.ori_image.setPixmap(QtGui.QPixmap(img_stone))
+
+        maskImage = self.stone.morph_stone[self.curSlice]
+        if np.max(maskImage) <= 1:
+            maskImage = maskImage * 255
+        maskImage = maskImage.astype(np.uint8)
+        img_mask = QtGui.QImage(maskImage, maskImage.shape[0],
+                                 maskImage.shape[1], QtGui.QImage.Format_Grayscale8)
+        self.mask_image.setPixmap(QtGui.QPixmap(img_mask))
 
     def quit(self):
-        print('quit')
         sys.exit(0)
 
     def wheelEvent(self, event:QtGui.QWheelEvent):
-        if self.origin_image_label.underMouse():
+        if self.mask_image.underMouse():
             angle = event.angleDelta()
             if angle.y() > 0 and self.curSlice + 1 > 1:
                 self.curSlice = self.curSlice - 1
-                self.origin_image_label.setPixmap(QtGui.QPixmap(self.seg_img_list[self.curSlice]))
-                self.label1.setText('image                      '
-                                    + str(self.curSlice + 1) + '  of  ' + str(self.totSlice))
             elif angle.y() < 0 and self.curSlice + 1 < self.totSlice:
                 self.curSlice = self.curSlice + 1
-                self.origin_image_label.setPixmap(QtGui.QPixmap(self.seg_img_list[self.curSlice]))
-                self.label1.setText('image                      '
-                                    + str(self.curSlice + 1) + '  of  ' + str(self.totSlice))
+
+            stoneImage = self.stone.stone[self.curSlice]
+            if np.max(stoneImage) <= 1:
+                stoneImage = stoneImage * 255
+            stoneImage = stoneImage.astype(np.uint8)
+            img_stone = QtGui.QImage(stoneImage, stoneImage.shape[0],
+                                     stoneImage.shape[1], QtGui.QImage.Format_Grayscale8)
+            self.ori_image.setPixmap(QtGui.QPixmap(img_stone))
+
+            maskImage = self.stone.morph_stone[self.curSlice]
+            if np.max(maskImage) <= 1:
+                maskImage = maskImage * 255
+            maskImage = maskImage.astype(np.uint8)
+            img_mask = QtGui.QImage(maskImage, maskImage.shape[0],
+                                     maskImage.shape[1], QtGui.QImage.Format_Grayscale8)
+            self.mask_image.setPixmap(QtGui.QPixmap(img_mask))
+
 
     def mouseDoubleClickEvent(self, event:QtGui.QMouseEvent):
-        if self.origin_image_label.underMouse():
-            print(self.origin_image_label.mapFromGlobal(event.globalPos()))
-            self.front_view_label.setPixmap(QtGui.QPixmap('F:\BaiduNetdiskDownload\\front.png'))
-            self.left_view_label.setPixmap(QtGui.QPixmap('F:\BaiduNetdiskDownload\\left.png'))
-            self.top_view_label.setPixmap(QtGui.QPixmap('F:\BaiduNetdiskDownload\\top.png'))
+        pos = self.mask_image.mapFromGlobal(event.globalPos())
+        x = pos.x()
+        y = pos.y()
+        if self.mask_image.underMouse() and self.stone.morph_stone[self.curSlice][y, x] == 1:
+            self.fossil = self.stone.getThreeViewByIndexAndHWPosition(self.curSlice, y, x)
 
+            front_view = self.fossil.three_view[0].astype(np.uint8) * 255
+            front_view = QtGui.QImage(front_view, front_view.shape[1],
+                                     front_view.shape[0], front_view.shape[1], QtGui.QImage.Format_Grayscale8)
+            self.front_view.setPixmap(QtGui.QPixmap(front_view))
+
+            left_view = self.fossil.three_view[1].astype(np.uint8) * 255
+            left_view = QtGui.QImage(left_view, left_view.shape[1],
+                                      left_view.shape[0], left_view.shape[1], QtGui.QImage.Format_Grayscale8)
+            self.left_view.setPixmap(QtGui.QPixmap(left_view))
+
+            top_view = self.fossil.three_view[2].astype(np.uint8) * 255
+            top_view = QtGui.QImage(top_view, top_view.shape[1],
+                                      top_view.shape[0], top_view.shape[1], QtGui.QImage.Format_Grayscale8)
+            self.top_view.setPixmap(QtGui.QPixmap(top_view))
+        else:
+            self.fossil = None
+
+    def resegment(self):
+        input = self.le.text()
+        if len(input) != 0 and self.fossil != None:
+            iter = int(input)
+            self.reseged_three_view, self.reseged_binary_voxel = self.fossil.getNewThreeView(iter)
+
+            front_view = self.reseged_three_view[0].astype(np.uint8) * 255
+            front_view = QtGui.QImage(front_view, front_view.shape[1],
+                                      front_view.shape[0], front_view.shape[1], QtGui.QImage.Format_Grayscale8)
+            self.front_view.setPixmap(QtGui.QPixmap(front_view))
+
+            left_view = self.reseged_three_view[1].astype(np.uint8) * 255
+            left_view = QtGui.QImage(left_view, left_view.shape[1],
+                                     left_view.shape[0], left_view.shape[1], QtGui.QImage.Format_Grayscale8)
+            self.left_view.setPixmap(QtGui.QPixmap(left_view))
+
+            top_view = self.reseged_three_view[2].astype(np.uint8) * 255
+            top_view = QtGui.QImage(top_view, top_view.shape[1],
+                                    top_view.shape[0], top_view.shape[1], QtGui.QImage.Format_Grayscale8)
+            self.top_view.setPixmap(QtGui.QPixmap(top_view))
 
 
 if __name__ == '__main__':
     app = QApplication()
-
     window = MainWindow()
     window.show()
-
     app.exec_()
