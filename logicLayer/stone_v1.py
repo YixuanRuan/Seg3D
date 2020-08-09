@@ -35,7 +35,7 @@ class Stone:
 
         binary_voxel = Utils3D.getPadFossilFromStone(self.morph_stone, 1, min_slice, max_slice, min_h, max_h, min_w, max_w )
         print(binary_voxel.shape)
-        gray_voxel = Utils3D.getPadFossilFromStone(self.stone, 100, min_slice, max_slice, min_h, max_h, min_w, max_w )
+        gray_voxel = Utils3D.getPadFossilFromStone(self.stone, 10, min_slice, max_slice, min_h, max_h, min_w, max_w )
 
         fossil = Fossil(binary_voxel, gray_voxel, label,
                  min_slice, max_slice, min_h, max_h, min_w, max_w)

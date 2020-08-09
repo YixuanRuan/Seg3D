@@ -111,7 +111,6 @@ class MainWindow(QMainWindow):
         self.stone = LogicLayerInterface.getStone(filename)
 
         stoneImage = self.stone.stone[self.curSlice]
-        print(stoneImage.shape)
         if np.max(stoneImage) <= 1:
             stoneImage = stoneImage * 255
         stoneImage = stoneImage.astype(np.uint8)
@@ -120,12 +119,12 @@ class MainWindow(QMainWindow):
         self.ori_image.setPixmap(QtGui.QPixmap(img_stone))
 
         maskImage = self.stone.morph_stone[self.curSlice]
-        if np.max(maskImage) <= 1:
-            maskImage = maskImage * 255
-        maskImage = maskImage.astype(np.uint8)
-        img_mask = QtGui.QImage(maskImage, maskImage.shape[0],
-                                 maskImage.shape[1], QtGui.QImage.Format_Grayscale8)
-        self.mask_image.setPixmap(QtGui.QPixmap(img_mask))
+        nonzero = np.nonzero(maskImage)
+        segImage = cv2.cvtColor(stoneImage, cv2.COLOR_GRAY2RGB)
+        segImage[nonzero] = [255, 0, 0]
+        img_seg = QtGui.QImage(segImage, segImage.shape[0],
+                                 segImage.shape[1], segImage.shape[0] * 3,QtGui.QImage.Format_RGB888)
+        self.mask_image.setPixmap(QtGui.QPixmap(img_seg))
 
     def quit(self):
         sys.exit(0)
@@ -147,12 +146,12 @@ class MainWindow(QMainWindow):
             self.ori_image.setPixmap(QtGui.QPixmap(img_stone))
 
             maskImage = self.stone.morph_stone[self.curSlice]
-            if np.max(maskImage) <= 1:
-                maskImage = maskImage * 255
-            maskImage = maskImage.astype(np.uint8)
-            img_mask = QtGui.QImage(maskImage, maskImage.shape[0],
-                                     maskImage.shape[1], QtGui.QImage.Format_Grayscale8)
-            self.mask_image.setPixmap(QtGui.QPixmap(img_mask))
+            nonzero = np.nonzero(maskImage)
+            segImage = cv2.cvtColor(stoneImage, cv2.COLOR_GRAY2RGB)
+            segImage[nonzero] = [255, 0, 0]
+            img_seg = QtGui.QImage(segImage, segImage.shape[0],
+                                   segImage.shape[1], segImage.shape[0] * 3, QtGui.QImage.Format_RGB888)
+            self.mask_image.setPixmap(QtGui.QPixmap(img_seg))
 
 
     def mouseDoubleClickEvent(self, event:QtGui.QMouseEvent):
