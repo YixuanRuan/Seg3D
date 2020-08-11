@@ -5,6 +5,9 @@ from skimage.segmentation import clear_border
 import numpy as np
 from .fossil_v1 import Fossil
 from utils import Utils3D
+from utils import Utils2D
+from configs import opt_logic
+
 
 class Stone:
     def __init__(self, stone, slice_list):
@@ -16,6 +19,8 @@ class Stone:
         self.labeled_morph_stone = None
         self.labelStone()
 
+        self.gt_stone = None
+
     def segmentStone(self):
         res = np.zeros_like(self.stone)
         for i in range(self.stone.shape[0]):
@@ -24,7 +29,7 @@ class Stone:
         return res
 
     def getThreeViewByIndexAndHWPosition(self, slice, h, w):
-        label = self.labeled_morph_stone[slice,h,w] -1
+        label = self.labeled_morph_stone[slice, h, w] - 1
 
         min_slice = self.labeled_morph_fossil_features[label, 4]
         max_slice = self.labeled_morph_fossil_features[label, 5]
@@ -33,17 +38,45 @@ class Stone:
         min_w = self.labeled_morph_fossil_features[label, 8]
         max_w = self.labeled_morph_fossil_features[label, 9]
 
-        binary_voxel = Utils3D.getPadFossilFromStone(self.morph_stone, 1, min_slice, max_slice, min_h, max_h, min_w, max_w )
+        binary_voxel = Utils3D.getPadFossilFromStone(self.morph_stone, 1, min_slice, max_slice, min_h, max_h, min_w,
+                                                     max_w)
         print(binary_voxel.shape)
-        gray_voxel = Utils3D.getPadFossilFromStone(self.stone, 100, min_slice, max_slice, min_h, max_h, min_w, max_w )
+        gray_voxel = Utils3D.getPadFossilFromStone(self.stone, 100, min_slice, max_slice, min_h, max_h, min_w, max_w)
 
         fossil = Fossil(binary_voxel, gray_voxel, label,
-                 min_slice, max_slice, min_h, max_h, min_w, max_w)
+                        min_slice, max_slice, min_h, max_h, min_w, max_w)
 
         return fossil
 
+    def getGTStone(self, gt_dir_path):
+        image_manage = opt_logic.image_manage
+
+        # Test 01 Start
+        # 根据目录将图片序号提取出来并按顺序排列
+        index_list = Utils2D.getSortedIndexes(gt_dir_path, image_manage.gt_pattern,
+                                              image_manage.gt_splitter, image_manage.index)
+        # print(index_list)
+        # Test 01 End
+
+        # Test 02 Start
+        # 根据序列获取图片路径序列
+        image_path_name_list = Utils2D.get2DNames(gt_dir_path, index_list,
+                                                  image_manage.gt_tail, fixed=False, fixed_num=4)
+        # print(image_path_name_list)
+        # Test 02 End
+
+        # Test 03 Start
+        gt_stone = Utils3D.getGrayStoneFromNamePaths(image_path_name_list, image_manage.scale_size_H,
+                                                     image_manage.scale_size_W)
+        # print(np.sum(gray_stone))
+        # Test 03 End
+
+        self.gt_stone = gt_stone
+
+        return gt_stone
+
     def labelStone(self):
-        features , vx, names, pts = Utils3D.seperateMaskVoxelsGetFeaturesAndNamesAndPts(
+        features, vx, names, pts = Utils3D.seperateMaskVoxelsGetFeaturesAndNamesAndPts(
             self.morph_stone, self.slice_list, fixed_num=None,
             needPts=False, hint=True, needNamesOrPts=False
         )
@@ -66,7 +99,7 @@ class Stone:
         ls = clear_border(ls)
         return ls
 
-    def _store_evolution_in(self,lst):
+    def _store_evolution_in(self, lst):
         """Returns a callback function to store the evolution of the level sets in
         the given list.
         """
@@ -75,8 +108,3 @@ class Stone:
             lst.append(np.copy(x))
 
         return _store
-
-
-
-
-
