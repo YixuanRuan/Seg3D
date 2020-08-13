@@ -3,6 +3,7 @@ from skimage.segmentation import (morphological_chan_vese,
                                   checkerboard_level_set)
 from skimage.segmentation import clear_border
 from utils import Utils3D
+from utils import Metrics
 import numpy as np
 
 class Fossil:
@@ -24,6 +25,9 @@ class Fossil:
         self.reseged_binary_voxel = None
         self.reseged_three_view = None
 
+        self.gt_fossil = None
+        self.metrics = None
+
     def getThreeView(self):
         # [0] left , [1] upper , [2] front
         self.three_view = Utils3D.getThreeViews(self.binary_voxel)
@@ -38,6 +42,21 @@ class Fossil:
         self.reseg(iteration)
         self.reseged_three_view = Utils3D.getThreeViews(self.reseged_binary_voxel)
         return self.reseged_three_view,  self.reseged_binary_voxel
+
+    def getGT(self,gt_stone,pad):
+        gt = Utils3D.getPadFossilFromStone(gt_stone, pad, self.min_slice, self.max_slice, self.min_h, self.max_h, self.min_w, self.max_w)
+        if np.max(gt)>=1:
+            gt = gt/np.max(gt)
+        self.gt_fossil = gt
+        return gt
+
+    def getMetrics(self, initial = 0):
+        if initial == 0:
+            res = Metrics.computeMetrics(self.reseged_binary_voxel,self.gt_fossil)
+        else:
+            res = Metrics.computeMetrics(self.binary_voxel, self.gt_fossil)
+        self.metrics = res
+        return res
 
     def _MorphACWE(self, img,iteration):
         image = img_as_float(img)

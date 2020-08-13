@@ -29,6 +29,36 @@ iteration：正整数，1-正无穷，默认数值35，数值越大分割出来�
 	self.reseged_binary_voxel：分割出来的3D化石矩阵
 
 
+
+#### 01-03. 获取化石分割Metrics
+
+##### 关于数据
+
+https://pan.baidu.com/s/1ih3aC8ma9MPDiq3qI18yVQ
+
+提取码：UBu9
+
+记得只能留.png和_mask_gt.png后缀的文件在文件夹里
+
+##### 如何使用
+
+参考test_.py
+由于使用者不一定有gt image所以接口操作复杂了几步  
+
+```python
+stone = LogicLayerInterface.getStone('./samples/')
+gt_stone = stone.getGTStone('./samples/')
+fossil = gt_stone.getThreeViewByIndexAndHWPosition(0,100,200)
+fossil.getGT(gt_stone, pad=0)
+metrics = fossil.getMetrics(1)
+```
+
+1. 使用 gt_stone = stone.getGTStone('./samples/')获取gt石头
+2. 使用 fossil.getGT(gt_stone,pad=n)获取fossil在gt stone 对应位置的gt fossil
+3. 使用 fossil.getMetrics(initial=1)，如果initial是1代表没有进行重新分割，如果是0可以不输入参数，
+因为0是默认值，默认对重新运行分割算法的区域进行metrics计算。
+4. 根据返回的metrics进行信息获取就行，是个dictionary，滑动到readme最后看属性。
+
 ### 2. 接口
 #### 函数01 genStone
 
@@ -46,6 +76,9 @@ iteration：正整数，1-正无穷，默认数值35，数值越大分割出来�
     self.stone ：灰度图3D Array  
     self.slice_list：图片index array，int  
     self.morph_stone：MorphACWE Algorithm Segmentation Stone  
+    self.labeled_fossil_features = None  
+    self.labeled_morph_stone = None  
+    self.gt_stone  
 方法：  
     self.getThreeViewByIndexAndHWPosition  
 
@@ -62,8 +95,28 @@ iteration：正整数，1-正无穷，默认数值35，数值越大分割出来�
     self.max_w    
     self.three_view   
     self.reseged_three_view  
-    self.reseged_binary_voxel   
-    
+    self.reseged_binary_voxel  
+    self.gt_fossil  
+    self.metrics
+
+### Metrics::Dictionary
+```python
+picScore['accuracy'] = accuracy  
+picScore['under_seg'] = under_seg  
+picScore['over_seg'] = over_seg  
+picScore['precision'] = precision  
+picScore['recall'] = recall  
+picScore['f1_score'] = f1_score  
+picScore['iou'] = iou  
+picScore['TP'] = TP  
+picScore['FP'] = FP  
+picScore['FN'] = FN  
+picScore['TN'] = TN  
+picScore['Total'] = total  
+```
+
+
+​    
 
 
 
