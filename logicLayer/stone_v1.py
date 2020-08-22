@@ -15,18 +15,22 @@ class Stone:
         self.slice_list = slice_list
         self.morph_stone = None
         self.segmentStone()
-        self.labeled_fossil_features = None
+        self.labeled_morph_fossil_features = None
         self.labeled_morph_stone = None
         self.labelStone()
 
         self.gt_stone = None
 
-    def segmentStone(self):
+    def segmentStone(self, iteration = 35):
         res = np.zeros_like(self.stone)
         for i in range(self.stone.shape[0]):
-            res[i] = self._MorphACWE(self.stone[i])
+            res[i] = self._MorphACWE(self.stone[i], iteration)
         self.morph_stone = res
         return res
+
+    # def reseg(self, iteration = 35):
+    #     self.segmentStone(iteration)
+    #     self.labelStone()
 
     def getThreeViewByIndexAndHWPosition(self, slice, h, w):
         label = self.labeled_morph_stone[slice, h, w] - 1
@@ -40,7 +44,6 @@ class Stone:
 
         binary_voxel = Utils3D.getPadFossilFromStone(self.morph_stone, 1, min_slice, max_slice, min_h, max_h, min_w,
                                                      max_w)
-        print(binary_voxel.shape)
         gray_voxel = Utils3D.getPadFossilFromStone(self.stone, 100, min_slice, max_slice, min_h, max_h, min_w, max_w)
 
         fossil = Fossil(binary_voxel, gray_voxel, label,
@@ -84,7 +87,7 @@ class Stone:
         self.labeled_morph_stone = vx
         return features, vx
 
-    def _MorphACWE(self, img):
+    def _MorphACWE(self, img, iteration = 35):
         image = img_as_float(img)
 
         # Initial level set
@@ -92,7 +95,7 @@ class Stone:
         # List with intermediate results for plotting the evolution
         evolution = []
         callback = self._store_evolution_in(evolution)
-        ls = morphological_chan_vese(image, 35, init_level_set=init_ls, smoothing=3,
+        ls = morphological_chan_vese(image, iteration, init_level_set=init_ls, smoothing=3,
                                      iter_callback=callback)
         if np.sum(ls) > (ls.shape[0] * ls.shape[1] / 2):
             ls = 1 - ls

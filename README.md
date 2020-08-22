@@ -28,7 +28,17 @@ iteration：正整数，1-正无穷，默认数值35，数值越大分割出来�
 	self.reseged_three_view：新的三视图，在原来的基础上上下左右padding了100个像素后重新分割   
 	self.reseged_binary_voxel：分割出来的3D化石矩阵
 
+#### 01-02-02. 局部化石分割02
 
+```python
+getNewThreeView2(iteration,origin,pad):
+```
+
+Origin: stone里面的 stone属性，代表的是石头的原始数据
+
+Pad，手动选择重新分割在当前Fossil范围上扩大的范围
+
+Iteration：iteration越大pad可以越小，因为iteration越大包围圈一般缩小更严重。
 
 #### 01-03. 获取化石分割Metrics
 
@@ -59,8 +69,29 @@ metrics = fossil.getMetrics(1)
 因为0是默认值，默认对重新运行分割算法的区域进行metrics计算。
 4. 根据返回的metrics进行信息获取就行，是个dictionary，滑动到readme最后看属性。
 
+#### 01-03-02. 获取化石分割Metrics 02
+
+获取gt_stone后进行下面操作
+
+**Step 1**
+
+```python
+fossil.getGT2(gt_stone,pad)
+```
+
+Pad：注意这个pad必须和上面01-02-02. 局部化石分割02那个pad相同
+
+**Step2**
+
+```
+fossil.getMetrics2( initial = 0):
+```
+
+没变
+
 ### 2. 接口
-#### 函数01 genStone
+
+#### 函数01 getStone
 
 输入：文件夹路径
 输出：Class::Stone
@@ -96,8 +127,10 @@ metrics = fossil.getMetrics(1)
     self.three_view   
     self.reseged_three_view  
     self.reseged_binary_voxel  
-    self.gt_fossil  
-    self.metrics
+	self.reseged_slices = None  
+	self.reseged_binary_voxel_2 = None  
+	self.reseged_three_view_2 = None    self.gt_fossil  
+    self.metrics  
 
 ### Metrics::Dictionary
 ```python
