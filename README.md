@@ -40,6 +40,24 @@ Pad，手动选择重新分割在当前Fossil范围上扩大的范围
 
 Iteration：iteration越大pad可以越小，因为iteration越大包围圈一般缩小更严重。
 
+#### 01-02-03. 局部化石分割03
+
+在调用下面这个函数之前需要调用
+
+```python
+getGT3(gt_stone,pad)
+```
+上面下面的pad需要一致
+```python
+getNewThreeView3(origin,pad)
+```
+
+Origin: stone里面的 stone属性，代表的是石头的原始数据
+
+Pad，手动选择重新分割在当前Fossil范围上扩大的范围
+
+使用了上面的函数后fossil.metrics_3储存了最新的metrics
+
 #### 01-03. 获取化石分割Metrics
 
 ##### 关于数据

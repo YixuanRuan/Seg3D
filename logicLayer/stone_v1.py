@@ -28,6 +28,13 @@ class Stone:
         self.morph_stone = res
         return res
 
+    # def reSegmentStone(self, min, max, iteration):
+    #     res = np.zeros_like(self.stone[min:max+1,:,:])
+    #     for i in range(min,max+1):
+    #         res[i] = self._MorphACWE(self.stone[i], iteration)
+    #     self.morph_stone = res
+    #     return res
+
     # def reseg(self, iteration = 35):
     #     self.segmentStone(iteration)
     #     self.labelStone()
@@ -50,6 +57,28 @@ class Stone:
                         min_slice, max_slice, min_h, max_h, min_w, max_w)
 
         return fossil
+
+    # def getBestThreeViewByIndexAndHWPositionAndGT(self, slice, h, w):
+    #     label = self.labeled_morph_stone[slice, h, w] - 1
+    #
+    #     min_slice = self.labeled_morph_fossil_features[label, 4]
+    #     max_slice = self.labeled_morph_fossil_features[label, 5]
+    #     min_h = self.labeled_morph_fossil_features[label, 6]
+    #     max_h = self.labeled_morph_fossil_features[label, 7]
+    #     min_w = self.labeled_morph_fossil_features[label, 8]
+    #     max_w = self.labeled_morph_fossil_features[label, 9]
+    #
+    #     binary_voxel = Utils3D.getPadFossilFromStone(self.morph_stone, 10, min_slice, max_slice, min_h, max_h, min_w,
+    #                                                  max_w)
+    #     gray_voxel = Utils3D.getPadFossilFromStone(self.stone, 10, min_slice, max_slice, min_h, max_h, min_w, max_w)
+    #
+    #     fossil = Fossil(binary_voxel, gray_voxel, label,
+    #                     min_slice, max_slice, min_h, max_h, min_w, max_w)
+    #
+    #     return fossil
+
+
+
 
     def getGTStone(self, gt_dir_path):
         image_manage = opt_logic.image_manage
