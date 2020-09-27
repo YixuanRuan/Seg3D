@@ -32,3 +32,11 @@ class Interface:
 
         return stone
 
+    @staticmethod
+    def voxels2ply(voxels, label=1, rgb=False, color=[0, 0, 0], hint=True):
+        return Utils3D.voxels2ply(voxels, label, rgb, color, hint)
+
+    @staticmethod
+    def savePly(vertices, filename, colors=None):
+        Utils3D.savePly(vertices, filename, colors)
+

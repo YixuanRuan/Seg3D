@@ -107,6 +107,28 @@ fossil.getMetrics2( initial = 0):
 
 没变
 
+#### 01-04 将Voxel转换成化石并保存
+
+```
+Interface.voxels2ply(voxels, label=1, rgb=False, color=[0, 0, 0], hint=True)
+```
+
+Voxels：三维矩阵，标注了0，1。1表示化石所在的区域。
+Label：化石的标注（默认1）。
+RGB：是否有颜色信息。
+Color：三维颜色信息。
+Hint：是否开启运行过程中的提示。
+
+返回值：两个 Points和Colors，没有颜色矩阵可以用 _ 接收colors字段
+
+```
+Interface.savePly(vertices, filename, colors=None)
+```
+
+保存点云到指定位置
+
+Vertices即上文中的Points，Colors即上文中的colors。
+
 ### 2. 接口
 
 #### 函数01 getStone
