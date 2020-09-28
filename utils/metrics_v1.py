@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 
 precision_warn = "no positive predicted"
 recall_warn = "no positive in ground truth"
@@ -8,9 +9,22 @@ iou_warn = "no positive in both gt and predicted"
 class Metrics:
     @staticmethod
     def computeMetrics(seg, gt, warn=True):
+        # print(seg.shape)
+        # print(gt.shape)
         assert seg.shape == gt.shape
+        if np.max(gt)>=1:
+            gt = gt/np.max(gt)
         seg = seg.astype(np.uint8)
         gt = gt.astype(np.uint8)
+        # if np.max(seg) <= 1:
+        #     seg = seg * 255
+        # seg = seg.astype(np.uint8)
+        # if np.max(gt) <= 1:
+        #     gt = gt * 255
+        # gt = gt.astype(np.uint8)
+        # cv2.imshow('seg',seg)
+        # cv2.imshow('gt',gt)
+
         assert np.max(seg) <= 1
         assert np.max(gt) <= 1
         total = np.sum(np.ones_like(seg).astype(np.uint8))

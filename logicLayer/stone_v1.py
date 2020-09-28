@@ -6,7 +6,9 @@ import numpy as np
 from .fossil_v1 import Fossil
 from utils import Utils3D
 from utils import Utils2D
+from utils import morphsnakes as ms
 from configs import opt_logic
+
 
 
 class Stone:
@@ -15,18 +17,29 @@ class Stone:
         self.slice_list = slice_list
         self.morph_stone = None
         self.segmentStone()
-        self.labeled_fossil_features = None
+        self.labeled_morph_fossil_features = None
         self.labeled_morph_stone = None
         self.labelStone()
 
         self.gt_stone = None
 
-    def segmentStone(self):
+    def segmentStone(self, iteration = 35):
         res = np.zeros_like(self.stone)
         for i in range(self.stone.shape[0]):
-            res[i] = self._MorphACWE(self.stone[i])
+            res[i] = self._MorphACWE(self.stone[i], iteration)
         self.morph_stone = res
         return res
+
+    # def reSegmentStone(self, min, max, iteration):
+    #     res = np.zeros_like(self.stone[min:max+1,:,:])
+    #     for i in range(min,max+1):
+    #         res[i] = self._MorphACWE(self.stone[i], iteration)
+    #     self.morph_stone = res
+    #     return res
+
+    # def reseg(self, iteration = 35):
+    #     self.segmentStone(iteration)
+    #     self.labelStone()
 
     def getThreeViewByIndexAndHWPosition(self, slice, h, w):
         label = self.labeled_morph_stone[slice, h, w] - 1
@@ -40,13 +53,34 @@ class Stone:
 
         binary_voxel = Utils3D.getPadFossilFromStone(self.morph_stone, 1, min_slice, max_slice, min_h, max_h, min_w,
                                                      max_w)
-        # print(binary_voxel.shape)
         gray_voxel = Utils3D.getPadFossilFromStone(self.stone, 100, min_slice, max_slice, min_h, max_h, min_w, max_w)
 
         fossil = Fossil(binary_voxel, gray_voxel, label,
                         min_slice, max_slice, min_h, max_h, min_w, max_w)
 
         return fossil
+
+    # def getBestThreeViewByIndexAndHWPositionAndGT(self, slice, h, w):
+    #     label = self.labeled_morph_stone[slice, h, w] - 1
+    #
+    #     min_slice = self.labeled_morph_fossil_features[label, 4]
+    #     max_slice = self.labeled_morph_fossil_features[label, 5]
+    #     min_h = self.labeled_morph_fossil_features[label, 6]
+    #     max_h = self.labeled_morph_fossil_features[label, 7]
+    #     min_w = self.labeled_morph_fossil_features[label, 8]
+    #     max_w = self.labeled_morph_fossil_features[label, 9]
+    #
+    #     binary_voxel = Utils3D.getPadFossilFromStone(self.morph_stone, 10, min_slice, max_slice, min_h, max_h, min_w,
+    #                                                  max_w)
+    #     gray_voxel = Utils3D.getPadFossilFromStone(self.stone, 10, min_slice, max_slice, min_h, max_h, min_w, max_w)
+    #
+    #     fossil = Fossil(binary_voxel, gray_voxel, label,
+    #                     min_slice, max_slice, min_h, max_h, min_w, max_w)
+    #
+    #     return fossil
+
+
+
 
     def getGTStone(self, gt_dir_path):
         image_manage = opt_logic.image_manage
@@ -84,7 +118,7 @@ class Stone:
         self.labeled_morph_stone = vx
         return features, vx
 
-    def _MorphACWE(self, img):
+    def _MorphACWE(self, img, iteration = 35):
         image = img_as_float(img)
 
         # Initial level set
@@ -92,7 +126,7 @@ class Stone:
         # List with intermediate results for plotting the evolution
         evolution = []
         callback = self._store_evolution_in(evolution)
-        ls = morphological_chan_vese(image, 35, init_level_set=init_ls, smoothing=3,
+        ls = morphological_chan_vese(image, iteration, init_level_set=init_ls, smoothing=3,
                                      iter_callback=callback)
         if np.sum(ls) > (ls.shape[0] * ls.shape[1] / 2):
             ls = 1 - ls
@@ -108,3 +142,26 @@ class Stone:
             lst.append(np.copy(x))
 
         return _store
+
+    def reseg_in(self, image, x, y):
+        image = img_as_float(image)
+        # print(x, y, image.shape)
+        res, iteration = ms.morphological_chan_vese(image, x, y, flag='inside')
+        if np.sum(res) > (res.shape[0] * res.shape[1] / 2):
+            res = 1 - res
+        print(iteration)
+        # for i in range(self.stone.shape[0]):
+        #     self.morph_stone[i] = self._MorphACWE(self.stone[i], iteration)
+        return res
+
+
+    def reseg_out(self, image, x, y):
+        image = img_as_float(image)
+        # print(x, y, image.shape)
+        res, iteration = ms.morphological_chan_vese(image, x, y, flag='outside')
+        if np.sum(res) > (res.shape[0] * res.shape[1] / 2):
+            res = 1 - res
+        print(iteration)
+        # for i in range(self.stone.shape[0]):
+        #     self.morph_stone[i] = self._MorphACWE(self.stone[i], iteration)
+        return res

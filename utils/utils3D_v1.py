@@ -42,8 +42,9 @@ class Utils3D:
         num_of_images = len(image_path)
         stone = np.zeros((num_of_images, H, W), dtype=np.uint8)
         for i in range(num_of_images):
-                gray = cv2.imread(image_path[i], 0)
-                stone[i] = cv2.resize(gray, (W,H))
+            print(image_path[i])
+            gray = cv2.imread(image_path[i], 0)
+            stone[i] = cv2.resize(gray, (W,H))
         return stone
 
     @staticmethod
