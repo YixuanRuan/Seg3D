@@ -126,6 +126,20 @@ class MainWindow(QMainWindow):
         self.stone = LogicLayerInterface.getStone(filename)
         self.gt_stone = self.stone.getGTStone(filename)
 
+        for slice in range(int(self.totSlice)):
+            stoneImage = self.stone.stone[slice]
+            if np.max(stoneImage) <= 1:
+                stoneImage = stoneImage * 255
+            stoneImage = stoneImage.astype(np.uint8)
+
+            maskImage = self.stone.morph_stone[slice]
+            nonzero = np.nonzero(maskImage)
+            segImage = cv2.cvtColor(stoneImage, cv2.COLOR_GRAY2RGB)
+            segImage[nonzero] = [0, 0, 255]
+            cv2.imwrite('D:\workspace\Seg3D\\results\\' + str(slice) + '.png',segImage)
+
+        pts, _ = LogicLayerInterface.voxels2ply(self.stone.morph_stone)
+
         self.display()
 
     def quit(self):
@@ -144,53 +158,49 @@ class MainWindow(QMainWindow):
     def mouseDoubleClickEvent(self, event:QtGui.QMouseEvent):
         if self.mask_image.underMouse():
             pos = self.mask_image.mapFromGlobal(event.globalPos())
-            labels = measure.label(self.stone.morph_stone[self.curSlice], connectivity=2)
-
-            pos_x = 193
-            pos_y = 332
+            # print(pos)
+            pos_x = 197
+            pos_y = 338
 
             maske_stone = np.nonzero(self.stone.morph_stone[self.curSlice])
             dist = np.sqrt(np.sum((np.array(maske_stone)- np.array([[pos_y],[pos_x]]))**2, axis=0)).tolist()
             near_p = np.array(maske_stone)[:, dist.index(np.min(dist))]
-            num_morph = labels[near_p[0],near_p[1]]
-            neighbor = np.array(np.where(labels == num_morph))
-            min_y = np.min(neighbor[0, :]) -10
-            max_y = np.max(neighbor[0, :]) +10
-            min_x = np.min(neighbor[1, :]) -10
-            max_x = np.max(neighbor[1, :]) +10
-            # print(min_x, max_x, min_y, max_y)
-            # print(pos.x(), pos.y())
-            crop = self.stone.morph_stone[self.curSlice, min_y:max_y, min_x:max_x]
-            crop_morph = self.stone.stone[self.curSlice, min_y:max_y, min_x:max_x]
+            self.fossil = self.stone.getThreeViewByIndexAndHWPosition(self.curSlice, near_p[0], near_p[1]) #near_p[0]:y
 
-            front_view = crop.astype(np.uint8) * 255
-            front_view = QtGui.QImage(front_view, front_view.shape[1],
-                                      front_view.shape[0], front_view.shape[1], QtGui.QImage.Format_Grayscale8)
-            self.front_view.setPixmap(QtGui.QPixmap(front_view))
-
-            scores = Metrics.computeMetrics( crop,self.gt_stone[self.curSlice, min_y:max_y, min_x:max_x])
-            IoU = scores['iou']
-            print('old IoU:', IoU)
+            min_y = int(self.fossil.min_h + 10)
+            max_y = int(self.fossil.max_h + 10)
+            min_x = int(self.fossil.min_w + 10)
+            max_x = int(self.fossil.max_w + 10)
+            min_slice = int(self.fossil.min_slice)
+            max_sicle = int(self.fossil.max_slice)
+            # print(min_y,max_y)
+            # print(min_x, max_x)
+            # print(min_slice, max_sicle)
 
             self.dialog = QSelectDialog()
-            if self.dialog.exec_() == QDialog.Accepted:
-                crop_resg = self.stone.reseg_in(crop_morph, pos_x - min_x, pos_y-min_y)
-            else:
-                crop_resg = self.stone.reseg_out(crop_morph, pos_x - min_x, pos_y-min_y)
-            self.dialog.destroy()
+            for slice in range(min_slice, max_sicle + 1):
+                crop_morph = self.stone.morph_stone[slice, min_y:max_y, min_x:max_x]
+                crop = self.stone.stone[slice, min_y:max_y, min_x:max_x]
 
-            left_view = crop_resg.astype(np.uint8) * 255
-            left_view = QtGui.QImage(left_view, left_view.shape[1],
-                                     left_view.shape[0], left_view.shape[1], QtGui.QImage.Format_Grayscale8)
-            self.left_view.setPixmap(QtGui.QPixmap(left_view))
+                scores = Metrics.computeMetrics(crop_morph, self.gt_stone[slice, min_y:max_y, min_x:max_x])
+                IoU = scores['iou']
+                print('slice' + str(slice) + ' old IoU:', IoU)
 
-            self.stone.morph_stone[self.curSlice, min_y:max_y, min_x:max_x] = crop_resg
+                if self.dialog.exec_() == QDialog.Accepted:
+                    crop_resg = self.stone.reseg_in(crop, crop_morph, pos_x - min_x, pos_y - min_y)
+                else:
+                    crop_resg = self.stone.reseg_out(crop, crop_morph, pos_x - min_x, pos_y - min_y)
+                self.dialog.destroy()
+                self.stone.morph_stone[slice, min_y:max_y, min_x:max_x] = crop_resg
+
+                scores = Metrics.computeMetrics(crop_resg, self.gt_stone[slice, min_y:max_y, min_x:max_x])
+                IoU = scores['iou']
+                print('slice' + str(slice) + ' new IoU:', IoU)
 
             self.display()
 
-            scores = Metrics.computeMetrics(crop_resg, self.gt_stone[self.curSlice, min_y:max_y, min_x:max_x])
-            IoU = scores['iou']
-            print('new IoU:', IoU)
+
+
 
     def display(self):
         stoneImage = self.stone.stone[self.curSlice]

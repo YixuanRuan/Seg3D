@@ -143,25 +143,24 @@ class Stone:
 
         return _store
 
-    def reseg_in(self, image, x, y):
+    def reseg_in(self, image, mask, x, y):
         image = img_as_float(image)
         # print(x, y, image.shape)
-        res, iteration = ms.morphological_chan_vese(image, x, y, flag='inside')
-        if np.sum(res) > (res.shape[0] * res.shape[1] / 2):
-            res = 1 - res
-        print(iteration)
-        # for i in range(self.stone.shape[0]):
-        #     self.morph_stone[i] = self._MorphACWE(self.stone[i], iteration)
-        return res
+        res, iteration = ms.morphological_chan_vese(image, mask, x, y, flag='inside', flip=0)
+        res1, iteration1 = ms.morphological_chan_vese(image, mask, x, y, flag='inside', flip=1)
+        if np.sum(res * mask) > np.sum(res1 * mask):
+            return res
+        else:
+            return res1
 
 
-    def reseg_out(self, image, x, y):
+
+    def reseg_out(self, image, mask, x, y):
         image = img_as_float(image)
         # print(x, y, image.shape)
-        res, iteration = ms.morphological_chan_vese(image, x, y, flag='outside')
-        if np.sum(res) > (res.shape[0] * res.shape[1] / 2):
-            res = 1 - res
-        print(iteration)
-        # for i in range(self.stone.shape[0]):
-        #     self.morph_stone[i] = self._MorphACWE(self.stone[i], iteration)
-        return res
+        res, iteration = ms.morphological_chan_vese(image, mask, x, y, flag='outside', flip=0)
+        res1, iteration1 = ms.morphological_chan_vese(image, mask, x, y, flag='outside', flip=1)
+        if np.sum(res * mask) > np.sum(res1 * mask):
+            return res
+        else:
+            return res1

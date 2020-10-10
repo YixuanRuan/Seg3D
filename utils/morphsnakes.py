@@ -261,7 +261,8 @@ def inverse_gaussian_gradient(image, alpha=100.0, sigma=5.0):
     gradnorm = ndi.gaussian_gradient_magnitude(image, sigma, mode='nearest')
     return 1.0 / np.sqrt(1.0 + alpha * gradnorm)
 
-def morphological_chan_vese(image, x, y, flag, iterations=35, init_level_set='checkerboard',
+import matplotlib.pyplot as plt
+def morphological_chan_vese(image, mask, x, y, flag, flip, iterations=35, init_level_set='checkerboard',
                             smoothing=3, lambda1=1, lambda2=1,
                             iter_callback=lambda x: None):
     """Morphological Active Contours without Edges (MorphACWE)
@@ -343,14 +344,17 @@ def morphological_chan_vese(image, x, y, flag, iterations=35, init_level_set='ch
 
     c1s = []
 
-    for iter in range(iterations):
+    if flip == 1:
+        u = 1 - u
 
+    for iter in range(iterations):
         # inside = u > 0
         # outside = u <= 0
         c0 = (image * (1 - u)).sum() / float((1 - u).sum() + 1e-8)
         c1 = (image * u).sum() / float(u.sum() + 1e-8)
 
         c1s.append(c1)
+        # print(iter, c1)
 
         # Image attachment
         du = np.gradient(u)
@@ -367,12 +371,13 @@ def morphological_chan_vese(image, x, y, flag, iterations=35, init_level_set='ch
         iter_callback(u)
 
         # if flag == 'inside' and u[y, x] == 0:
-        #     return u, iter - 1
-        # elif flag == 'outside' and u[y, x] == 0:
+        #     print(iter, c1)
         #     return u, iter
-    import matplotlib.pyplot as plt
-    plt.plot([i for i in range(iterations)],c1s)
-    plt.show()
+        # elif flag == 'outside' and u[y, x] == 0:
+        #     return u, iter + 1
+
+    # plt.plot([i for i in range(iterations)],c1s)
+    # plt.show()
 
     return u, iterations
 
