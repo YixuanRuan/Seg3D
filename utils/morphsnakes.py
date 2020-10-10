@@ -261,7 +261,7 @@ def inverse_gaussian_gradient(image, alpha=100.0, sigma=5.0):
     gradnorm = ndi.gaussian_gradient_magnitude(image, sigma, mode='nearest')
     return 1.0 / np.sqrt(1.0 + alpha * gradnorm)
 
-import matplotlib.pyplot as plt
+
 def morphological_chan_vese(image, mask, x, y, flag, flip, iterations=35, init_level_set='checkerboard',
                             smoothing=3, lambda1=1, lambda2=1,
                             iter_callback=lambda x: None):
